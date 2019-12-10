@@ -1,0 +1,60 @@
+.IF .NOT .DEF pd_main
+pd_main=1
+
+.def __PD_FULL_BUILD__
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// zero page
+
+frmcnt			equ		$00			//2 bytes, frame counter, increment on vblk, no count while loading
+bongo_crunch	equ		$02			//6 bytes for bongo cruncher
+rmt_player_zp	equ		$08			//19 bytes for rmt player
+end_eff			equ		$1b			//pomocniczy marker okreslajacy czy dany eff juz si� sko�czy�
+regA			equ		$1c
+regX			equ		$1d
+regY			equ		$1e
+first_free_zp	equ 	$1f			//address of first free byte on zero page
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// memlo
+
+MAX_MEMLO		equ		$2000-5		//maksymalna warto�� memlo umo�liwiaj�ca poprawne za�adowanie dema
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// bank switcher
+
+SET_NEXT_BANK	equ $600			//adres procedury loadera zmieniaj�cej banki extram, pierwsze wywo�anie pod��cza pierwszy bank
+									//ka�de wywo�anie powoduje pod�aczenie kolejnego banku w kolejno�ci ustalonej w konfiguratorze
+									//po zako�czeniu procesu �adaowania procedura jest zb�dna i miejsce zajmowane przez ni� mo�na wykorzysta�
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// rmt player
+							
+RASTERMUSIC_TRACKER equ $de00
+RMTINIT				equ RASTERMUSIC_TRACKER
+RMTPLAY				equ RASTERMUSIC_TRACKER+3
+MSX_INTERNAL		equ $E144
+PLAYERADDR			equ $FFEF
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// nmi
+
+DLI_VEC				equ	$FFE0+1		//wektor dla procedury przerwania DLI
+VBL_VEC				equ	$FFF6+1		//wektor dla procedury przerwania VBLK
+NMI_INT_EXIT		equ	$FFF9		//addres RTI	
+MAIN_NMI_HANDLER	equ $FFDB		//main nmi handler
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// os
+
+OS_MAIN_TAB			equ	$d800
+OS_DECRUNCH			equ OS_MAIN_TAB
+OS_INIT				equ OS_MAIN_TAB+3
+OS_PREP_NEXT_PART	equ	OS_MAIN_TAB+6
+OS_ENABLE_XCOLOR	equ OS_MAIN_TAB+9
+OS_DISABLE_XCOLOR	equ OS_MAIN_TAB+12
+OS_SET_PLAYER		equ OS_MAIN_TAB+15
+OS_RTS				equ	OS_MAIN_TAB+18
+
+.ENDIF

@@ -1,0 +1,12 @@
+.metadata/
+build/
+
+*.bc
+*.project
+*.lab
+*.lst
+*.obx
+*.xex
+*.atdbg
+
+

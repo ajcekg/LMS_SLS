@@ -1,0 +1,198 @@
+;	@com.wudsn.ide.asm.mainsourcefile=
+.IF .NOT .DEF pd_macro
+pd_macro = 1
+
+	icl 'sls.hea'
+	icl 'atari.hea'
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// build
+
+part_header	.macro
+		opt h- f+
+		org (LOAD_ADDRESS-2)
+		dta a(LOAD_ADDRESS)
+		jmp RUN_ADDRESS
+.endm	
+
+part_header_no_run	.macro
+		opt h- f+
+		org (LOAD_ADDRESS-2)
+		dta a(LOAD_ADDRESS)
+.endm
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// nmi
+
+restore_vbl	.macro					//macro wy³¹cza procedure vbl aktualnie pod³¹czon¹
+		mwa #NMI_INT_EXIT VBL_VEC
+.endm
+
+restore_dli	.macro					//macro wy³¹cza procedure dli aktualnie pod³¹czon¹
+		mwa #NMI_INT_EXIT DLI_VEC
+.endm
+
+restore_nmi	.macro					//macro wy³¹cza procedury vbl i dli aktualnie pod³¹czone
+	restore_vbl
+	restore_dli
+.endm
+
+set_vbl		.macro		//jeden parametr, okreœla adres nowej procedury vbl
+		mwa #:1 VBL_VEC
+.endm
+
+set_dli		.macro		//jeden parametr, okreœla adres nowej procedury dli
+		mwa #:1 DLI_VEC
+.endm
+
+set_dli_lo	.macro		//jeden parametr, okreœla mlodszy bajt adresu nowej procedury dli
+						//jesli kilka procedur dli znajduje siê na tej samej stronie pamiêci to 
+						//uzycie tego macra oszczêdza nam 6 cykli podczas prze³¹czania siê na now¹ procedurê
+		mva #:1 DLI_VEC
+.endm
+
+set_nmi		.macro		//dwa parametry, 1 - adres procedury vbl, 2 - adres procedury dli
+		set_vbl :1
+		set_dli	:2
+.endm
+
+/// poni¿sze makra s¹ niebezpieczne w u¿yciu, jeœli nie wiesz co robisz, nie rozumiesz o co chodzi lub jesteœ prawdziwym lamerem
+/// !!! jesli powy¿sze pasuje do ciebie to lepiej o nich zapomnij !!!
+/// ich zadaniem jest zwiêkszenie czasu jakim dysponuje procedua dli. Odbywa siê to poprzez wy³¹czenie standardowego splitera przerwan nmi
+/// i wpisanie adresu procedury dli bezpoœrednio w wektor 'nmivec'. Jeœli pod koniec ramki gdzie u¿yto tego rozwi¹zania nie zostanie przywrócona
+/// normalna obs³uga przerwañ to objawi siê to w tym przypadku brakiem muzyki i brakiem wywo³ania w³asnej procedury vbl oraz rozsynchronizowaniem przerwañ dli
+/// jeœli chcemy tego u¿yæ to nale¿y natychmiast po wyst¹pieniu przerwania vbl w³¹czyæ ten tryb a w ostatnim przerwaniu dli wy³¹czyæ
+/// u¿ycie tego rozwi¹zania pozwala zaoszczêdziæ 8 cykli cpu na ka¿dym wyst¹pieniu przerwania dli
+
+set_turbo_dli	.macro	//jeden parametr, okreœla adres nowej procedury dli
+		mwa #:1 nmivec
+.endm		
+
+set_turbo_dli_lo .macro	//jeden parametr, okreœla mlodszy bajt adresu nowej procedury dli, reszta opisu przy set_dli_lo
+		mva #:1 nmivec
+.endm		
+
+restore_normal_nmi	.macro	//parametrów brak, przywraca normaln¹ obs³ugê przerwañ nmi
+		mwa #MAIN_NMI_HANDLER nmivec
+.endm		
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// utils
+
+utils_wait_one_frame	.macro 
+.DEF :wait_one_frame
+.local
+		lda frmcnt
+		cmp frmcnt
+		beq *-2
+		rts
+.endl
+.endm
+
+utils_wait_x_frame	.macro	//liczba ramek do odczekania w A (pozwala czekoaæ od 1 do 255 ramek)
+.DEF :wait_x_frame
+.local
+		sta m0+1
+m0		lda #0
+		beq eend
+		dec m0+1		
+		lda frmcnt
+		cmp frmcnt
+		beq *-2
+		jmp m0
+eend	rts
+.endl
+.endm
+
+utils_wait_end_frame	.macro
+.DEF :wait_end_frame
+.local
+l1	lda vcount
+	cmp #$79
+	bne l1
+	rts
+.endl	
+.endm
+
+utils_wait_end_frame2	.macro
+.DEF :wait_end_frame2
+.local
+l1	lda vcount
+	cmp #154
+	bne l1
+	rts
+.endl	
+.endm
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// pm
+
+PM_X1_M_OFFSET		equ	$300
+PM_X1_P0_OFFSET		equ	$400
+PM_X1_P1_OFFSET		equ	$500
+PM_X1_P2_OFFSET		equ	$600
+PM_X1_P3_OFFSET		equ	$700
+
+PM_X2_M_OFFSET		equ	$180
+PM_X2_P0_OFFSET		equ	$200
+PM_X2_P1_OFFSET		equ	$280
+PM_X2_P2_OFFSET		equ	$300
+PM_X2_P3_OFFSET		equ	$380
+
+
+pm_x1_clear_mem_short	.macro // pierwszy parametr to adres pacz¹tku bufora pm, drugi to dana jak¹ wype³nic bufor
+		ldy #0
+		lda #:2
+l:2		sta :1+PM_X1_M_OFFSET,y											
+		sta :1+PM_X1_P0_OFFSET,y											
+		sta :1+PM_X1_P1_OFFSET,y										
+		sta :1+PM_X1_P2_OFFSET,y										
+		sta :1+PM_X1_P3_OFFSET,y
+		iny
+		bne l:2
+.endm	
+
+pm_x2_clear_mem_short	.macro // pierwszy parametr to adres pacz¹tku bufora pm, drugi to dana jak¹ wype³nic bufor
+		ldy #0
+		lda #:2
+l:2		sta :1+PM_X2_M_OFFSET,y											
+		sta :1+PM_X2_P0_OFFSET,y											
+		sta :1+PM_X2_P1_OFFSET,y										
+		sta :1+PM_X2_P2_OFFSET,y										
+		sta :1+PM_X2_P3_OFFSET,y
+		iny
+		bpl l:2
+.endm
+
+pm_set_size	.macro	//jeden parametr okresla szerokoœæ pm 0-normal, 1-x2, 3-x4
+		lda #:1
+		sta sizep0	
+		sta sizep1	
+		sta sizep2	
+		sta sizep3
+		lda #((:1<<6)|(:1<<4)|(:1<<2)|(:1))
+		sta sizem
+.endm
+
+pm_out_of_screen	.macro	//przesuwa wszystkie pm poza ektan
+		lda #255
+		sta hposp0
+		sta hposp1
+		sta hposp2
+		sta hposp3
+		sta hposm0
+		sta hposm1
+		sta hposm2
+		sta hposm3
+.endm
+
+pm_set_all_color	.macro	//ustawienie kolorow pm na wartosc param 1
+		lda #:1
+		sta colpm0	
+		sta colpm1	
+		sta colpm2	
+		sta colpm3
+.endm
+.ENDIF

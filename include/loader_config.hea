@@ -1,0 +1,17 @@
+.IF .NOT .DEF loader_config
+loader_config = 1
+
+config_stereo			equ	$80		//0 - mono, 1 - stereo
+config_vbxe				equ $81		//0 - not present or bad core, 1 - ok
+config_vbxe_on			equ $82		//0 - disabled, 1 - enabled
+config_vbxe_page		equ $83		// je¿eli vbxe jest dostêpne to tutaj mamy numer strony gdzie znajduj¹ siê rejestry vbxe
+config_ext_num_banks	equ $84		// iloœc bankow w ext ram
+config_ext_banks  		equ $85		// 64 bajty - tablica numerów dostêpnych banków (gotowe wartoœci do wpisania do portb)
+
+
+MIN_FREE_BANKS			equ 16		// minimalna liczba wolnych banków potrzebna do uruchomienia dema
+CONFIG_COLOR_SAT		equ 12		// jasnoœæ napisów konfiguratora
+CONFIG_COLOR			equ $80		// kolor napisów jeœli VBXE jest w³¹czone
+
+
+.ENDIF

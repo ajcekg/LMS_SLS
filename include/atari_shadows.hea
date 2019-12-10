@@ -1,0 +1,21 @@
+.IF .NOT .DEF atari_shadows
+atari_shadows = 1
+
+SDMCTL 	equ	$022F
+SDLSTL	equ $0230
+SDLSTH	equ $0231
+CHBAS 	equ $02F4
+CHART 	equ	$02F3
+SLPENH 	equ	$0234 
+SLPENV 	equ	$0235 
+COLOR0	equ $02C4 
+COLOR1 	equ $02C5 
+COLOR2 	equ	$02C6 
+COLOR3	equ $02C7 
+COLBK 	equ $02C8
+
+MEMLO	equ $02e7
+
+dlptr	=	$D402
+
+.ENDIF
